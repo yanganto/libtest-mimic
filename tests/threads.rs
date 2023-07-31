@@ -1,5 +1,5 @@
 use std::time::Duration;
-use libtest_mimic::{Trial, Arguments};
+use libtest_with::{Trial, Arguments};
 
 
 #[test]
@@ -8,7 +8,7 @@ fn check_test_on_main_thread() {
 
     let mut args = Arguments::default();
     args.test_threads = Some(1);
-    let conclusion = libtest_mimic::run(&args, vec![Trial::test("check", move || {
+    let conclusion = libtest_with::run(&args, vec![Trial::test("check", move || {
         assert_eq!(outer_thread, std::thread::current().id());
         Ok(())
     })]);
@@ -25,7 +25,7 @@ fn all_tests_run_on_single_thread() {
         Trial::test("b", move || Ok(())),
         Trial::test("c", move || Ok(())),
     ];
-    let conclusion = libtest_mimic::run(&args, trials);
+    let conclusion = libtest_with::run(&args, trials);
     assert_eq!(conclusion.num_passed, 3);
 }
 
@@ -40,7 +40,7 @@ fn all_tests_run_on_two_threads() {
         Trial::test("d", move || Ok(())),
         Trial::test("e", move || Ok(())),
     ];
-    let conclusion = libtest_mimic::run(&args, trials);
+    let conclusion = libtest_with::run(&args, trials);
     assert_eq!(conclusion.num_passed, 5);
 }
 
@@ -58,7 +58,7 @@ fn multi_threads_are_used() {
         Trial::test("d", move || { std::thread::sleep(Duration::from_secs(1)); Ok(()) }),
     ];
     let before = std::time::Instant::now();
-    let _ = libtest_mimic::run(&args, trials);
+    let _ = libtest_with::run(&args, trials);
     if before.elapsed() >= Duration::from_secs(2) {
         panic!("Seems like tests are not executed in parallel");
     }

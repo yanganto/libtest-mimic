@@ -1,16 +1,16 @@
 [package]
-name = "libtest-mimic"
-version = "0.8.1"
-authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>"]
+name = "libtest-with"
+version = "0.8.1-0"
+authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>", "Antonio Yang <yanganto>"]
 edition = "2021"
 rust-version = "1.65"
 
 description = """
-Write your own test harness that looks and behaves like the built-in test \
-harness used by `rustc --test`
+A slightly customized version of libtest-mimic,
+such that it can be easier create a test runner for test-with
 """
-documentation = "https://docs.rs/libtest-mimic"
-repository = "https://github.com/LukasKalbertodt/libtest-mimic"
+documentation = "https://docs.rs/libtest-with"
+repository = "https://github.com/yanganto/libtest-with"
 license = "MIT/Apache-2.0"
 keywords = ["libtest", "test", "built-in", "framework", "harness"]
 categories = ["development-tools::testing", "development-tools::build-utils"]

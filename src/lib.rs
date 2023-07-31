@@ -25,7 +25,7 @@
 //! And in `tests/mytest.rs` you would call [`run`] in the `main` function:
 //!
 //! ```no_run
-//! use libtest_mimic::{Arguments, Trial};
+//! use libtest_with::{Arguments, Trial};
 //!
 //!
 //! // Parse command line arguments
@@ -38,7 +38,7 @@
 //! ];
 //!
 //! // Run all tests and exit the application appropriatly.
-//! libtest_mimic::run(&args, tests).exit();
+//! libtest_with::run(&args, tests).exit();
 //! ```
 //!
 //! Instead of returning `Ok` or `Err` directly, you want to actually perform
