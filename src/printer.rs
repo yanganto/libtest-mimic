@@ -126,10 +126,10 @@ impl Printer {
 
     /// Prints the outcome of a single tests. `ok` or `FAILED` in pretty mode
     /// and `.` or `F` in terse mode.
-    pub(crate) fn print_single_outcome(&mut self, outcome: &Outcome) {
+    pub(crate) fn print_single_outcome(&mut self, info: &TestInfo, outcome: &Outcome) {
         match self.format {
             FormatSetting::Pretty => {
-                self.print_outcome_pretty(outcome);
+                self.print_outcome_pretty(Some(info), outcome);
                 writeln!(self.out).unwrap();
             }
             FormatSetting::Terse => {
@@ -140,7 +140,7 @@ impl Printer {
                     Outcome::Measured { .. } => {
                         // Benchmark are never printed in terse mode... for
                         // some reason.
-                        self.print_outcome_pretty(outcome);
+                        self.print_outcome_pretty(Some(info), outcome);
                         writeln!(self.out).unwrap();
                         return;
                     }
@@ -165,7 +165,7 @@ impl Printer {
 
                 writeln!(self.out).unwrap();
                 write!(self.out, "test result: ").unwrap();
-                self.print_outcome_pretty(&outcome);
+                self.print_outcome_pretty(None, &outcome);
                 writeln!(
                     self.out,
                     ". {} passed; {} failed; {} ignored; {} measured; \
@@ -243,12 +243,16 @@ impl Printer {
     }
 
     /// Prints a colored 'ok'/'FAILED'/'ignored'/'bench'.
-    fn print_outcome_pretty(&mut self, outcome: &Outcome) {
+    fn print_outcome_pretty(&mut self, info: Option<&TestInfo>, outcome: &Outcome) {
         let s = match outcome {
-            Outcome::Passed => "ok",
-            Outcome::Failed { .. } => "FAILED",
-            Outcome::Ignored => "ignored",
-            Outcome::Measured { .. } => "bench",
+            Outcome::Passed => "ok".into(),
+            Outcome::Failed { .. } => "FAILED".into(),
+            Outcome::Ignored => if let Some(Some(msg)) = info.map(|i| i.ignore_message.as_deref()) {
+                format!("ignored, {}", msg)
+            } else {
+                "ignored".into()
+            },
+            Outcome::Measured { .. } => "bench".into(),
         };
 
         self.out.set_color(&color_of_outcome(outcome)).unwrap();

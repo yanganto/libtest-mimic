@@ -117,6 +117,7 @@ impl Trial {
                 name: name.into(),
                 kind: String::new(),
                 is_ignored: false,
+                ignore_message: None,
                 is_bench: false,
             },
         }
@@ -150,6 +151,7 @@ impl Trial {
                 name: name.into(),
                 kind: String::new(),
                 is_ignored: false,
+                ignore_message: None,
                 is_bench: true,
             },
         }
@@ -176,10 +178,11 @@ impl Trial {
     /// not execute them by default (for example because they take a long time
     /// or require a special environment). If the `--ignored` flag is set,
     /// ignored tests are executed, too.
-    pub fn with_ignored_flag(self, is_ignored: bool) -> Self {
+    pub fn with_ignored_flag(self, is_ignored: bool, ignore_message: Option<String>) -> Self {
         Self {
             info: TestInfo {
                 is_ignored,
+                ignore_message,
                 ..self.info
             },
             ..self
@@ -237,6 +240,7 @@ struct TestInfo {
     name: String,
     kind: String,
     is_ignored: bool,
+    ignore_message: Option<String>,
     is_bench: bool,
 }
 
@@ -426,7 +430,7 @@ pub fn run(args: &Arguments, mut tests: Vec<Trial>) -> Conclusion {
 
     let mut failed_tests = Vec::new();
     let mut handle_outcome = |outcome: Outcome, test: TestInfo, printer: &mut Printer| {
-        printer.print_single_outcome(&outcome);
+        printer.print_single_outcome(&test, &outcome);
 
         // Handle outcome
         match outcome {
