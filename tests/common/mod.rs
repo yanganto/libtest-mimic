@@ -1,7 +1,7 @@
 use std::{path::Path, iter::repeat_with, collections::HashMap};
 use pretty_assertions::assert_eq;
 
-use libtest_mimic::{run, Arguments, Conclusion, Trial};
+use libtest_with::{run, Arguments, Conclusion, Trial};
 
 
 const TEMPDIR: &str = env!("CARGO_TARGET_TMPDIR");

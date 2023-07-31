@@ -1,5 +1,5 @@
 use common::{args, check};
-use libtest_mimic::{Trial, Conclusion};
+use libtest_with::{Trial, Conclusion};
 
 #[macro_use]
 mod common;
