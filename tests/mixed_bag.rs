@@ -14,6 +14,7 @@ fn tests() -> Vec<Trial> {
     vec![
         Trial::test("cat", || Ok(())),
         Trial::test("dog", || Err("was not a good boy".into())),
+        Trial::test("dog2", || Err("rt-ignored: was not a good boy".into())),
         Trial::test("fox", || Ok(())).with_kind("apple"),
         Trial::test("bunny", || Err("jumped too high".into())).with_kind("apple"),
         Trial::test("frog", || Ok(()))
@@ -46,17 +47,18 @@ fn tests() -> Vec<Trial> {
 
 #[test]
 fn normal() {
-    check(args([]), tests, 18,
+    check(args([]), tests, 19,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 4,
             num_failed: 4,
-            num_ignored: 10,
+            num_ignored: 11,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ignored
@@ -100,17 +102,18 @@ fn normal() {
 
 #[test]
 fn test_mode() {
-    check(args(["--test"]), tests, 18,
+    check(args(["--test"]), tests, 19,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 2,
             num_failed: 2,
-            num_ignored: 14,
+            num_ignored: 15,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ignored
@@ -146,17 +149,18 @@ fn test_mode() {
 
 #[test]
 fn bench_mode() {
-    check(args(["--bench"]), tests, 18,
+    check(args(["--bench"]), tests, 19,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 0,
             num_failed: 2,
-            num_ignored: 14,
+            num_ignored: 15,
             num_measured: 2,
         },
         "
             test          cat    ... ignored
             test          dog    ... ignored
+            test          dog2   ... ignored
             test [apple]  fox    ... ignored
             test [apple]  bunny  ... ignored
             test          frog   ... ignored
@@ -196,6 +200,7 @@ fn list() {
     assert_log!(out, "
         cat: test
         dog: test
+        dog2: test
         [apple] fox: test
         [apple] bunny: test
         frog: test
@@ -269,7 +274,7 @@ fn list_with_filter() {
 fn filter_c() {
     check(args(["c"]), tests, 2,
         Conclusion {
-            num_filtered_out: 16,
+            num_filtered_out: 17,
             num_passed: 1,
             num_failed: 0,
             num_ignored: 1,
@@ -284,16 +289,20 @@ fn filter_c() {
 
 #[test]
 fn filter_o_test() {
-    check(args(["--test", "o"]), tests, 7,
+    check(
+        args(["--test", "o"]),
+        tests,
+        8,
         Conclusion {
             num_filtered_out: 11,
             num_passed: 1,
             num_failed: 1,
-            num_ignored: 5,
+            num_ignored: 6,
             num_measured: 0,
         },
         "
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test          frog   ... ignored
             test          frog2  ... ignored, it is not white
@@ -315,16 +324,20 @@ fn filter_o_test() {
 
 #[test]
 fn filter_o_test_include_ignored() {
-    check(args(["--test", "--include-ignored", "o"]), tests, 7,
+    check(
+        args(["--test", "--include-ignored", "o"]),
+        tests,
+        8,
         Conclusion {
             num_filtered_out: 11,
             num_passed: 3,
             num_failed: 2,
-            num_ignored: 2,
+            num_ignored: 3,
             num_measured: 0,
         },
         "
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test          frog   ... ok
             test          frog2  ... ok
@@ -350,9 +363,12 @@ fn filter_o_test_include_ignored() {
 
 #[test]
 fn filter_o_test_ignored() {
-    check(args(["--test", "--ignored", "o"]), tests, 4,
+    check(
+        args(["--test", "--ignored", "o"]),
+        tests,
+        4,
         Conclusion {
-            num_filtered_out: 14,
+            num_filtered_out: 15,
             num_passed: 2,
             num_failed: 1,
             num_ignored: 1,
@@ -378,17 +394,21 @@ fn filter_o_test_ignored() {
 
 #[test]
 fn normal_include_ignored() {
-    check(args(["--include-ignored"]), tests, 18,
+    check(
+        args(["--include-ignored"]),
+        tests,
+        19,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 9,
             num_failed: 9,
-            num_ignored: 0,
+            num_ignored: 1,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ok
@@ -452,9 +472,12 @@ fn normal_include_ignored() {
 
 #[test]
 fn normal_ignored() {
-    check(args(["--ignored"]), tests, 10,
+    check(
+        args(["--ignored"]),
+        tests,
+        10,
         Conclusion {
-            num_filtered_out: 8,
+            num_filtered_out: 9,
             num_passed: 5,
             num_failed: 5,
             num_ignored: 0,
@@ -502,9 +525,12 @@ fn normal_ignored() {
 
 #[test]
 fn lots_of_flags() {
-    check(args(["--include-ignored", "--skip", "g", "--test", "o"]), tests, 3,
+    check(
+        args(["--include-ignored", "--skip", "g", "--test", "o"]),
+        tests,
+        3,
         Conclusion {
-            num_filtered_out: 15,
+            num_filtered_out: 16,
             num_passed: 1,
             num_failed: 1,
             num_ignored: 1,
@@ -534,12 +560,12 @@ fn terse_output() {
         num_filtered_out: 0,
         num_passed: 4,
         num_failed: 4,
-        num_ignored: 10,
+        num_ignored: 11,
         num_measured: 0,
     });
     assert_log!(out, "
-        running 18 tests
-        .F.Fiiiiii.F.Fiiii
+        running 19 tests
+        .Fi.Fiiiiii.F.Fiiii
         failures:
 
         ---- dog ----
@@ -561,7 +587,7 @@ fn terse_output() {
             blue
             green
 
-        test result: FAILED. 4 passed; 4 failed; 10 ignored; 0 measured; 0 filtered out; \
+        test result: FAILED. 4 passed; 4 failed; 11 ignored; 0 measured; 0 filtered out; \
             finished in 0.00s
     ");
 }

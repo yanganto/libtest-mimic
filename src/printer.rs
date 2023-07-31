@@ -136,7 +136,7 @@ impl Printer {
                 let c = match outcome {
                     Outcome::Passed => '.',
                     Outcome::Failed { .. } => 'F',
-                    Outcome::Ignored => 'i',
+                    Outcome::Ignored(_) => 'i',
                     Outcome::Measured { .. } => {
                         // Benchmark are never printed in terse mode... for
                         // some reason.
@@ -247,11 +247,22 @@ impl Printer {
         let s = match outcome {
             Outcome::Passed => "ok".into(),
             Outcome::Failed { .. } => "FAILED".into(),
-            Outcome::Ignored => if let Some(Some(msg)) = info.map(|i| i.ignore_message.as_deref()) {
-                format!("ignored, {}", msg)
-            } else {
-                "ignored".into()
-            },
+            Outcome::Ignored(rt_msg) => {
+                let msg = if rt_msg.is_some() {
+                    rt_msg.as_deref()
+                } else if info.is_some() {
+                    info.map(|i| i.ignore_message.as_deref())
+                        .unwrap_or_default()
+                } else {
+                    None
+                };
+
+                if let Some(msg) = msg {
+                    format!("ignored, {}", msg)
+                } else {
+                    "ignored".into()
+                }
+            }
             Outcome::Measured { .. } => "bench".into(),
         };
 
@@ -288,7 +299,7 @@ fn color_of_outcome(outcome: &Outcome) -> ColorSpec {
     let color = match outcome {
         Outcome::Passed => Color::Green,
         Outcome::Failed { .. } => Color::Red,
-        Outcome::Ignored => Color::Yellow,
+        Outcome::Ignored(_) => Color::Yellow,
         Outcome::Measured { .. } => Color::Cyan,
     };
     out.set_fg(Some(color));
