@@ -88,7 +88,24 @@ use printer::Printer;
 
 pub use crate::args::{Arguments, ColorSetting, FormatSetting};
 
+pub static RUNTIME_IGNORE_PREFIX: &'static str = "rt-ignored: ";
 
+#[cfg(feature = "http")]
+pub use reqwest;
+#[cfg(feature = "icmp")]
+pub use ping;
+
+#[cfg(feature = "resource")]
+pub use sysinfo;
+#[cfg(feature = "resource")]
+pub use byte_unit;
+#[cfg(feature = "resource")]
+pub use num_cpus;
+#[cfg(feature = "executable")]
+pub use which;
+#[cfg(feature = "user")]
+#[cfg(all(feature = "user", not(target_os = "windows")))]
+pub use users;
 
 /// A single test or benchmark.
 ///
@@ -118,12 +135,25 @@ impl Trial {
         Self {
             runner: Box::new(move |_test_mode| match runner() {
                 Ok(()) => Outcome::Passed,
-                Err(failed) => Outcome::Failed(failed),
+                Err(failed) => {
+                    if let Some(msg) = failed.message() {
+                        if msg.starts_with(RUNTIME_IGNORE_PREFIX) {
+                            let ignore_message = if msg.len() > 12 {
+                                Some(msg[12..].into())
+                            } else {
+                                None
+                            };
+                            return Outcome::Ignored(ignore_message);
+                        }
+                    }
+                    Outcome::Failed(failed)
+                }
             }),
             info: TestInfo {
                 name: name.into(),
                 kind: String::new(),
                 is_ignored: false,
+                ignore_message: None,
                 is_bench: false,
             },
         }
@@ -150,13 +180,15 @@ impl Trial {
                 Err(failed) => Outcome::Failed(failed),
                 Ok(_) if test_mode => Outcome::Passed,
                 Ok(Some(measurement)) => Outcome::Measured(measurement),
-                Ok(None)
-                    => Outcome::Failed("bench runner returned `Ok(None)` in bench mode".into()),
+                Ok(None) => {
+                    Outcome::Failed("bench runner returned `Ok(None)` in bench mode".into())
+                }
             }),
             info: TestInfo {
                 name: name.into(),
                 kind: String::new(),
                 is_ignored: false,
+                ignore_message: None,
                 is_bench: true,
             },
         }
@@ -183,10 +215,11 @@ impl Trial {
     /// not execute them by default (for example because they take a long time
     /// or require a special environment). If the `--ignored` flag is set,
     /// ignored tests are executed, too.
-    pub fn with_ignored_flag(self, is_ignored: bool) -> Self {
+    pub fn with_ignored_flag(self, is_ignored: bool, ignore_message: Option<String>) -> Self {
         Self {
             info: TestInfo {
                 is_ignored,
+                ignore_message,
                 ..self.info
             },
             ..self
@@ -244,6 +277,7 @@ struct TestInfo {
     name: String,
     kind: String,
     is_ignored: bool,
+    ignore_message: Option<String>,
     is_bench: bool,
 }
 
@@ -291,12 +325,10 @@ impl Failed {
 impl<M: std::fmt::Display> From<M> for Failed {
     fn from(msg: M) -> Self {
         Self {
-            msg: Some(msg.to_string())
+            msg: Some(msg.to_string()),
         }
     }
 }
-
-
 
 /// The outcome of performing a test/benchmark.
 #[derive(Debug, Clone)]
@@ -308,7 +340,7 @@ enum Outcome {
     Failed(Failed),
 
     /// The test or benchmark was ignored.
-    Ignored,
+    Ignored(Option<String>),
 
     /// The benchmark was successfully run.
     Measured(Measurement),
@@ -480,8 +512,8 @@ pub fn run(args: &Arguments, mut tests: Vec<Trial>) -> Conclusion {
             Outcome::Failed(failed) => {
                 failed_tests.push((test, failed.msg));
                 conclusion.num_failed += 1;
-            },
-            Outcome::Ignored => conclusion.num_ignored += 1,
+            }
+            Outcome::Ignored(_) => conclusion.num_ignored += 1,
             Outcome::Measured(_) => conclusion.num_measured += 1,
         }
     };
@@ -502,7 +534,7 @@ pub fn run(args: &Arguments, mut tests: Vec<Trial>) -> Conclusion {
             // the same line.
             printer.print_test(&test.info);
             let outcome = if args.is_ignored(&test) {
-                Outcome::Ignored
+                Outcome::Ignored(None)
             } else {
                 run_single(test.runner, test_mode)
             };
@@ -526,7 +558,8 @@ pub fn run(args: &Arguments, mut tests: Vec<Trial>) -> Conclusion {
                         };
 
                         let payload = if args.is_ignored(&trial) {
-                            (Outcome::Ignored, trial.info)
+                            // libtest-with use Ignored type with possible reason
+                            (Outcome::Ignored(None), trial.info)
                         } else {
                             let outcome = run_single(trial.runner, test_mode);
                             (outcome, trial.info)
@@ -577,7 +610,8 @@ fn run_single(runner: Box<dyn FnOnce(bool) -> Outcome + Send>, test_mode: bool) 
         // The `panic` information is just an `Any` object representing the
         // value the panic was invoked with. For most panics (which use
         // `panic!` like `println!`), this is either `&str` or `String`.
-        let payload = e.downcast_ref::<String>()
+        let payload = e
+            .downcast_ref::<String>()
             .map(|s| s.as_str())
             .or(e.downcast_ref::<&str>().map(|s| *s));
 

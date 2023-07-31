@@ -15,44 +15,60 @@ fn tests() -> Vec<Trial> {
         Trial::test("cat", || Ok(())),
         Trial::test("\"ups\"", || Err("failed to parse \"abc\"".into())),
         Trial::test("dog", || Err("was not a good boy".into())),
+        Trial::test("dog2", || Err("rt-ignored: was not a good boy".into())),
         Trial::test("fox", || Ok(())).with_kind("apple"),
         Trial::test("bunny", || Err("jumped too high".into())).with_kind("apple"),
-        Trial::test("frog", || Ok(())).with_ignored_flag(true),
-        Trial::test("owl", || Err("broke neck".into())).with_ignored_flag(true),
-        Trial::test("fly", || Ok(())).with_ignored_flag(true).with_kind("banana"),
-        Trial::test("bear", || Err("no honey".into())).with_ignored_flag(true).with_kind("banana"),
+        Trial::test("frog", || Ok(()))
+            .with_ignored_flag(true, None),
+        Trial::test("frog2", || Ok(()))
+            .with_ignored_flag(true, Some("it is not white".into())),
+        Trial::test("owl", || Err("broke neck".into()))
+            .with_ignored_flag(true, None),
+        Trial::test("fly", || Ok(()))
+            .with_ignored_flag(true, None).with_kind("banana"),
+        Trial::test("bear", || Err("no honey".into()))
+            .with_ignored_flag(true, None).with_kind("banana"),
+        Trial::test("bear2", || Err("no honey".into()))
+            .with_ignored_flag(true, Some("it is not black".into())).with_kind("banana"),
 
         Trial::bench("red", |_| Ok(meas(32, 3))),
         Trial::bench("blue", |_| Err("sky fell down".into())),
         Trial::bench("yellow", |_| Ok(meas(64, 4))).with_kind("kiwi"),
         Trial::bench("green", |_| Err("was poisoned".into())).with_kind("kiwi"),
-        Trial::bench("purple", |_| Ok(meas(100, 5))).with_ignored_flag(true),
-        Trial::bench("cyan", |_| Err("not creative enough".into())).with_ignored_flag(true),
-        Trial::bench("orange", |_| Ok(meas(17, 6))).with_ignored_flag(true).with_kind("banana"),
-        Trial::bench("pink", |_| Err("bad".into())).with_ignored_flag(true).with_kind("banana"),
+        Trial::bench("purple", |_| Ok(meas(100, 5)))
+            .with_ignored_flag(true, None),
+        Trial::bench("cyan", |_| Err("not creative enough".into()))
+            .with_ignored_flag(true, None),
+        Trial::bench("orange", |_| Ok(meas(17, 6)))
+            .with_ignored_flag(true, None).with_kind("banana"),
+        Trial::bench("pink", |_| Err("bad".into()))
+            .with_ignored_flag(true, None).with_kind("banana"),
     ]
 }
 
 #[test]
 fn normal() {
-    check(args([]), tests, 17,
+    check(args([]), tests, 20,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 4,
             num_failed: 5,
-            num_ignored: 8,
+            num_ignored: 11,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          \"ups\"  ... FAILED
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ignored
+            test          frog2  ... ignored, it is not white
             test          owl    ... ignored
             test [banana] fly    ... ignored
             test [banana] bear   ... ignored
+            test [banana] bear2  ... ignored, it is not black
             test          red    ... ok
             test          blue   ... FAILED
             test [kiwi]   yellow ... ok
@@ -92,24 +108,27 @@ fn normal() {
 
 #[test]
 fn test_mode() {
-    check(args(["--test"]), tests, 17,
+    check(args(["--test"]), tests, 20,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 2,
             num_failed: 3,
-            num_ignored: 12,
+            num_ignored: 15,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          \"ups\"  ... FAILED
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ignored
+            test          frog2  ... ignored, it is not white
             test          owl    ... ignored
             test [banana] fly    ... ignored
             test [banana] bear   ... ignored
+            test [banana] bear2  ... ignored, it is not black
             test          red    ... ignored
             test          blue   ... ignored
             test [kiwi]   yellow ... ignored
@@ -141,24 +160,27 @@ fn test_mode() {
 
 #[test]
 fn bench_mode() {
-    check(args(["--bench"]), tests, 17,
+    check(args(["--bench"]), tests, 20,
         Conclusion {
             num_filtered_out: 0,
             num_passed: 0,
             num_failed: 2,
-            num_ignored: 13,
+            num_ignored: 16,
             num_measured: 2,
         },
         "
             test          cat    ... ignored
             test          \"ups\"  ... ignored
             test          dog    ... ignored
+            test          dog2   ... ignored
             test [apple]  fox    ... ignored
             test [apple]  bunny  ... ignored
             test          frog   ... ignored
+            test          frog2  ... ignored, it is not white
             test          owl    ... ignored
             test [banana] fly    ... ignored
             test [banana] bear   ... ignored
+            test [banana] bear2  ... ignored, it is not black
             test          red    ... bench:          32 ns/iter (+/- 3)
             test          blue   ... FAILED
             test [kiwi]   yellow ... bench:          64 ns/iter (+/- 4)
@@ -191,12 +213,15 @@ fn list() {
         cat: test
         \"ups\": test
         dog: test
+        dog2: test
         [apple] fox: test
         [apple] bunny: test
         frog: test
+        frog2: test
         owl: test
         [banana] fly: test
         [banana] bear: test
+        [banana] bear2: test
         red: bench
         blue: bench
         [kiwi] yellow: bench
@@ -220,9 +245,11 @@ fn list_ignored() {
     let (c, out) = common::do_run(args(["--list", "--ignored"]), tests());
     assert_log!(out, "
         frog: test
+        frog2: test
         owl: test
         [banana] fly: test
         [banana] bear: test
+        [banana] bear2: test
         purple: bench
         cyan: bench
         [banana] orange: bench
@@ -247,6 +274,7 @@ fn list_with_filter() {
         [apple] bunny: test
         [banana] fly: test
         [banana] bear: test
+        [banana] bear2: test
         cyan: bench
         [banana] orange: bench
         [banana] pink: bench
@@ -302,10 +330,13 @@ fn list_with_filter_exact() {
         cat: test
         \"ups\": test
         dog: test
+        dog2: test
         [apple] bunny: test
         frog: test
+        frog2: test
         owl: test
         [banana] bear: test
+        [banana] bear2: test
         red: bench
         blue: bench
         [kiwi] yellow: bench
@@ -330,7 +361,7 @@ fn list_with_filter_exact() {
 fn filter_c() {
     check(args(["c"]), tests, 2,
         Conclusion {
-            num_filtered_out: 15,
+            num_filtered_out: 18,
             num_passed: 1,
             num_failed: 0,
             num_ignored: 1,
@@ -345,18 +376,23 @@ fn filter_c() {
 
 #[test]
 fn filter_o_test() {
-    check(args(["--test", "o"]), tests, 6,
+    check(
+        args(["--test", "o"]),
+        tests,
+        8,
         Conclusion {
-            num_filtered_out: 11,
+            num_filtered_out: 12,
             num_passed: 1,
             num_failed: 1,
-            num_ignored: 4,
+            num_ignored: 6,
             num_measured: 0,
         },
         "
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test          frog   ... ignored
+            test          frog2  ... ignored, it is not white
             test          owl    ... ignored
             test [kiwi]   yellow ... ignored
             test [banana] orange ... ignored
@@ -375,18 +411,23 @@ fn filter_o_test() {
 
 #[test]
 fn filter_o_test_include_ignored() {
-    check(args(["--test", "--include-ignored", "o"]), tests, 6,
+    check(
+        args(["--test", "--include-ignored", "o"]),
+        tests,
+        8,
         Conclusion {
-            num_filtered_out: 11,
-            num_passed: 2,
+            num_filtered_out: 12,
+            num_passed: 3,
             num_failed: 2,
-            num_ignored: 2,
+            num_ignored: 3,
             num_measured: 0,
         },
         "
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test          frog   ... ok
+            test          frog2  ... ok
             test          owl    ... FAILED
             test [kiwi]   yellow ... ignored
             test [banana] orange ... ignored
@@ -409,16 +450,20 @@ fn filter_o_test_include_ignored() {
 
 #[test]
 fn filter_o_test_ignored() {
-    check(args(["--test", "--ignored", "o"]), tests, 3,
+    check(
+        args(["--test", "--ignored", "o"]),
+        tests,
+        4,
         Conclusion {
-            num_filtered_out: 14,
-            num_passed: 1,
+            num_filtered_out: 16,
+            num_passed: 2,
             num_failed: 1,
             num_ignored: 1,
             num_measured: 0,
         },
         "
             test          frog   ... ok
+            test          frog2  ... ok
             test          owl    ... FAILED
             test [banana] orange ... ignored
 
@@ -436,24 +481,30 @@ fn filter_o_test_ignored() {
 
 #[test]
 fn normal_include_ignored() {
-    check(args(["--include-ignored"]), tests, 17,
+    check(
+        args(["--include-ignored"]),
+        tests,
+        20,
         Conclusion {
             num_filtered_out: 0,
-            num_passed: 8,
-            num_failed: 9,
-            num_ignored: 0,
+            num_passed: 9,
+            num_failed: 10,
+            num_ignored: 1,
             num_measured: 0,
         },
         "
             test          cat    ... ok
             test          \"ups\"  ... FAILED
             test          dog    ... FAILED
+            test          dog2   ... ignored, was not a good boy
             test [apple]  fox    ... ok
             test [apple]  bunny  ... FAILED
             test          frog   ... ok
+            test          frog2  ... ok
             test          owl    ... FAILED
             test [banana] fly    ... ok
             test [banana] bear   ... FAILED
+            test [banana] bear2  ... FAILED
             test          red    ... ok
             test          blue   ... FAILED
             test [kiwi]   yellow ... ok
@@ -480,6 +531,9 @@ fn normal_include_ignored() {
             ---- bear ----
             no honey
 
+            ---- bear2 ----
+            no honey
+
             ---- blue ----
             sky fell down
 
@@ -499,6 +553,7 @@ fn normal_include_ignored() {
                 bunny
                 owl
                 bear
+                bear2
                 blue
                 green
                 cyan
@@ -509,19 +564,24 @@ fn normal_include_ignored() {
 
 #[test]
 fn normal_ignored() {
-    check(args(["--ignored"]), tests, 8,
+    check(
+        args(["--ignored"]),
+        tests,
+        10,
         Conclusion {
-            num_filtered_out: 9,
-            num_passed: 4,
-            num_failed: 4,
+            num_filtered_out: 10,
+            num_passed: 5,
+            num_failed: 5,
             num_ignored: 0,
             num_measured: 0,
         },
         "
             test          frog   ... ok
+            test          frog2  ... ok
             test          owl    ... FAILED
             test [banana] fly    ... ok
             test [banana] bear   ... FAILED
+            test [banana] bear2  ... FAILED
             test          purple ... ok
             test          cyan   ... FAILED
             test [banana] orange ... ok
@@ -535,6 +595,9 @@ fn normal_ignored() {
             ---- bear ----
             no honey
 
+            ---- bear2 ----
+            no honey
+
             ---- cyan ----
             not creative enough
 
@@ -545,6 +608,7 @@ fn normal_ignored() {
             failures:
                 owl
                 bear
+                bear2
                 cyan
                 pink
         ",
@@ -553,9 +617,12 @@ fn normal_ignored() {
 
 #[test]
 fn lots_of_flags() {
-    check(args(["--include-ignored", "--skip", "g", "--test", "o"]), tests, 3,
+    check(
+        args(["--include-ignored", "--skip", "g", "--test", "o"]),
+        tests,
+        3,
         Conclusion {
-            num_filtered_out: 14,
+            num_filtered_out: 17,
             num_passed: 1,
             num_failed: 1,
             num_ignored: 1,
@@ -585,12 +652,12 @@ fn terse_output() {
         num_filtered_out: 0,
         num_passed: 4,
         num_failed: 5,
-        num_ignored: 8,
+        num_ignored: 11,
         num_measured: 0,
     });
     assert_log!(out, "
-        running 17 tests
-        .FF.Fiiii.F.Fiiii
+        running 20 tests
+        .FFi.Fiiiiii.F.Fiiii
         failures:
 
         ---- \"ups\" ----
@@ -616,7 +683,7 @@ fn terse_output() {
             blue
             green
 
-        test result: FAILED. 4 passed; 5 failed; 8 ignored; 0 measured; 0 filtered out; \
+        test result: FAILED. 4 passed; 5 failed; 11 ignored; 0 measured; 0 filtered out; \
             finished in 0.00s
     ");
 }
@@ -630,7 +697,7 @@ fn json_output() {
             num_filtered_out: 0,
             num_passed: 4,
             num_failed: 5,
-            num_ignored: 8,
+            num_ignored: 11,
             num_measured: 0,
         }
     );

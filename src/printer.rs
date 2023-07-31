@@ -144,18 +144,18 @@ impl Printer {
     pub(crate) fn print_single_outcome(&mut self, info: &TestInfo, outcome: &Outcome) {
         match self.format {
             FormatSetting::Pretty => {
-                self.print_outcome_pretty(outcome);
+                self.print_outcome_pretty(Some(info), outcome);
                 writeln!(self.out).unwrap();
             }
             FormatSetting::Terse => {
                 let c = match outcome {
                     Outcome::Passed => '.',
                     Outcome::Failed { .. } => 'F',
-                    Outcome::Ignored => 'i',
+                    Outcome::Ignored(_) => 'i',
                     Outcome::Measured { .. } => {
                         // Benchmark are never printed in terse mode... for
                         // some reason.
-                        self.print_outcome_pretty(outcome);
+                        self.print_outcome_pretty(Some(info), outcome);
                         writeln!(self.out).unwrap();
                         return;
                     }
@@ -182,7 +182,7 @@ impl Printer {
                         match outcome {
                             Outcome::Passed => "ok",
                             Outcome::Failed(_) => "failed",
-                            Outcome::Ignored => "ignored",
+                            Outcome::Ignored(_) => "ignored",
                             Outcome::Measured(_) => unreachable!(),
                         },
                         match outcome {
@@ -213,7 +213,7 @@ impl Printer {
 
                 writeln!(self.out).unwrap();
                 write!(self.out, "test result: ").unwrap();
-                self.print_outcome_pretty(&outcome);
+                self.print_outcome_pretty(None, &outcome);
                 writeln!(
                     self.out,
                     ". {} passed; {} failed; {} ignored; {} measured; \
@@ -311,12 +311,27 @@ impl Printer {
     }
 
     /// Prints a colored 'ok'/'FAILED'/'ignored'/'bench'.
-    fn print_outcome_pretty(&mut self, outcome: &Outcome) {
+    fn print_outcome_pretty(&mut self, info: Option<&TestInfo>, outcome: &Outcome) {
         let s = match outcome {
-            Outcome::Passed => "ok",
-            Outcome::Failed { .. } => "FAILED",
-            Outcome::Ignored => "ignored",
-            Outcome::Measured { .. } => "bench",
+            Outcome::Passed => "ok".into(),
+            Outcome::Failed { .. } => "FAILED".into(),
+            Outcome::Ignored(rt_msg) => {
+                let msg = if rt_msg.is_some() {
+                    rt_msg.as_deref()
+                } else if info.is_some() {
+                    info.map(|i| i.ignore_message.as_deref())
+                        .unwrap_or_default()
+                } else {
+                    None
+                };
+
+                if let Some(msg) = msg {
+                    format!("ignored, {}", msg)
+                } else {
+                    "ignored".into()
+                }
+            }
+            Outcome::Measured { .. } => "bench".into(),
         };
 
         let style = color_of_outcome(outcome);
@@ -350,7 +365,7 @@ fn color_of_outcome(outcome: &Outcome) -> Style {
     let color = match outcome {
         Outcome::Passed => AnsiColor::Green,
         Outcome::Failed { .. } => AnsiColor::Red,
-        Outcome::Ignored => AnsiColor::Yellow,
+        Outcome::Ignored(_) => AnsiColor::Yellow,
         Outcome::Measured { .. } => AnsiColor::Cyan,
     };
     Style::new().fg_color(Some(Color::Ansi(color)))
