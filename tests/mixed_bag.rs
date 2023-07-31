@@ -1,6 +1,6 @@
-use crate::common::{args, check, do_run};
-use libtest_mimic::{Conclusion, Measurement, Trial};
 use pretty_assertions::assert_eq;
+use libtest_with::{Trial, Conclusion, Measurement};
+use crate::common::{args, check, do_run};
 
 #[macro_use]
 mod common;
