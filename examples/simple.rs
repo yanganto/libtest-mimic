@@ -10,7 +10,8 @@ fn main() {
     let tests = vec![
         Trial::test("check_toph", check_toph),
         Trial::test("check_sokka", check_sokka),
-        Trial::test("long_computation", long_computation).with_ignored_flag(true),
+        Trial::test("long_computation", long_computation)
+            .with_ignored_flag(true, Some("Computation is too long".into())),
         Trial::test("foo", compile_fail_dummy).with_kind("compile-fail"),
         Trial::test("check_katara", check_katara),
     ];
