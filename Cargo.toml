@@ -3,7 +3,7 @@ name = "libtest-with"
 version = "0.7.0"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>", "Antonio Yang <yanganto>"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.71.0"
 
 description = """
 A slightly customized version of libtest-mimic,
