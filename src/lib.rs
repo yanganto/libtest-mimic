@@ -83,6 +83,23 @@ pub use crate::args::{Arguments, ColorSetting, FormatSetting};
 
 pub static RUNTIME_IGNORE_PREFIX: &'static str = "rt-ignored: ";
 
+#[cfg(feature = "http")]
+pub use reqwest;
+#[cfg(feature = "icmp")]
+pub use ping;
+
+#[cfg(feature = "resource")]
+pub use sysinfo;
+#[cfg(feature = "resource")]
+pub use byte_unit;
+#[cfg(feature = "resource")]
+pub use num_cpus;
+#[cfg(feature = "executable")]
+pub use which;
+#[cfg(feature = "user")]
+#[cfg(all(feature = "user", not(target_os = "windows")))]
+use users;
+
 /// A single test or benchmark.
 ///
 /// The original `libtest` often calls benchmarks "tests", which is a bit
