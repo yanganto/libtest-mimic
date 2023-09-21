@@ -98,7 +98,7 @@ pub use num_cpus;
 pub use which;
 #[cfg(feature = "user")]
 #[cfg(all(feature = "user", not(target_os = "windows")))]
-use users;
+pub use users;
 
 /// A single test or benchmark.
 ///
