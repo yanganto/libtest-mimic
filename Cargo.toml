@@ -26,17 +26,17 @@ anstream = "0.6.14"
 anstyle = "1.0.7"
 
 reqwest = { version = "0.11", features = ["blocking"], optional = true }
-ping = { version = "0.4", optional = true }
-sysinfo = { version = "0.29", optional = true }
-byte-unit = { version = "4.0", optional = true }
+ping = { version = "0.5", optional = true }
+sysinfo = { version = "0.30", optional = true }
+byte-unit = { version = "5.0", optional = true }
 num_cpus = { version = "1.13", optional = true }
-which = { version = "4.3", optional = true }
+which = { version = "5.0", optional = true }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 users = { version = "0.11", optional = true }
 
 [dev-dependencies]
-fastrand = "2.0.0"
+fastrand = "2.0.1"
 pretty_assertions = "1.2.1"
 
 [features]
