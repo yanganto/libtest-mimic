@@ -1,6 +1,6 @@
 [package]
 name = "libtest-with"
-version = "0.7.0-0"
+version = "0.7.0-1"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>", "Antonio Yang <yanganto>"]
 edition = "2021"
 rust-version = "1.71.0"
@@ -19,24 +19,24 @@ readme = "README.md"
 exclude = [".github"]
 
 [dependencies]
-clap = { version = "4.0.8", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
 threadpool = "1.8.1"
-termcolor = "1.0.5"
+termcolor = "1.4"
 escape8259 = "0.5.2"
 
 reqwest = { version = "0.11", features = ["blocking"], optional = true }
 ping = { version = "0.5", optional = true }
 sysinfo = { version = "0.30", optional = true }
-byte-unit = { version = "5.0", optional = true }
-num_cpus = { version = "1.13", optional = true }
-which = { version = "5.0", optional = true }
+byte-unit = { version = "5.1", optional = true }
+num_cpus = { version = "1.16", optional = true }
+which = { version = "6.0", optional = true }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 users = { version = "0.11", optional = true }
 
 [dev-dependencies]
 fastrand = "2.0.1"
-pretty_assertions = "1.2.1"
+pretty_assertions = "1.4"
 
 [features]
 default = []
