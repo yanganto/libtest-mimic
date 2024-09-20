@@ -1,6 +1,6 @@
 [package]
 name = "libtest-with"
-version = "0.7.0-2"
+version = "0.7.0-3"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>", "Antonio Yang <yanganto>"]
 edition = "2021"
 rust-version = "1.71.0"
