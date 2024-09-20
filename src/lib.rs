@@ -106,6 +106,8 @@ pub use which;
 #[cfg(feature = "user")]
 #[cfg(all(feature = "user", not(target_os = "windows")))]
 pub use users;
+#[cfg(feature = "timezone")]
+pub use chrono;
 
 /// A single test or benchmark.
 ///
