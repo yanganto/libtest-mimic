@@ -105,7 +105,7 @@ pub use num_cpus;
 pub use which;
 #[cfg(feature = "user")]
 #[cfg(all(feature = "user", not(target_os = "windows")))]
-pub use users;
+pub use uzers;
 #[cfg(feature = "timezone")]
 pub use chrono;
 
