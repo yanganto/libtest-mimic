@@ -28,11 +28,11 @@ jobs:
 
       - name: Create Pull Request
         if: failure() && steps.update-dependency.outcome != 'success'
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
         with:
           add-paths: Cargo.toml
           reviewers: yanganto
-          base: test-with
+          base: libtest-with
           branch: dependency-update
           title: "Dependency Update"
           commit-message: "automated dependency update"
